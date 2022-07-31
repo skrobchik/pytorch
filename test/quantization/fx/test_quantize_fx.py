@@ -6555,6 +6555,31 @@ class TestQuantizeFxOps(QuantizationTestCase):
         ])
         m3(*example_inputs)
 
+    def test_getitem2(self):
+        class M(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.conv1 = torch.nn.Conv1d(in_channels=5, out_channels=5, kernel_size=5, padding=0)
+                self.conv2 = torch.nn.Conv1d(in_channels=5, out_channels=5, kernel_size=5, padding=0)
+                
+            def forward(self, inputs):
+                # inputs: [1, 5, 10]
+                x1 = self.conv1(inputs)
+                # x: [1, 5, 6]
+                x1 = x1 + inputs[:, :, -6:]
+                
+                x2 = self.conv2(x1)
+                x2 = x2 + x1[:, :, -2:]
+                return x2
+        
+        mod = M()
+        mod.eval()
+        mod(torch.rand(1,5,10))
+        
+        qconfig_dict = {"": get_default_qconfig()}
+        prepared = prepare_fx(mod, qconfig_dict, example_inputs=torch.rand(1, 5, 10))
+        converted = convert_fx(prepared)
+        print(converted)
 
     @skipIfNoFBGEMM
     def test_fixed_qparams_ops(self):

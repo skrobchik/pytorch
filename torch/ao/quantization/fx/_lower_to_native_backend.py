@@ -945,6 +945,14 @@ def _lower_getattr_tensor_metadta_op(model: QuantizedGraphModule):
             args[0] = n.args[0].args[0]
             n.args = tuple(args)
 
+def _lower_getitem(model: QuantizedGraphModule):
+    """
+    """
+    for n in model.graph.nodes:
+        if n.op == "call_function":
+            print("I FOUND THE NODE ", n.target)
+
+
 def _lower_to_native_backend(
     model: QuantizedGraphModule,
     qconfig_map: Dict[str, QConfigAny],
@@ -961,6 +969,7 @@ def _lower_to_native_backend(
     _lower_dynamic_weighted_ref_functional(model, qconfig_map)
     _lower_quantized_binary_op(model, qconfig_map)
     _lower_getattr_tensor_metadta_op(model)
+    _lower_getitem(model)
     special_pattern_replacement(model)
     model = fold_weight(model, node_name_to_scope)
     model.graph.eliminate_dead_code()
